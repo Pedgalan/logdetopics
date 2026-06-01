@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestor de Personas — Supabase</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --surface2: #f0efe9;
+      --border: #e2e0d8;
+      --border2: #cccab8;
+      --text: #1a1916;
+      --text2: #6b6960;
+      --text3: #9c9a8e;
+      --accent: #2a5c45;
+      --accent-light: #e8f2ed;
+      --accent-text: #1e4433;
+      --danger: #c0392b;
+      --danger-light: #fdf0ee;
+      --warning: #b8860b;
+      --warning-light: #fdf8e1;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      gap: 1rem;
+    }
+
+    .header-left h1 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .header-left p {
+      font-size: 0.875rem;
+      color: var(--text2);
+      margin-top: 4px;
+    }
+
+    .db-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-light);
+      color: var(--accent-text);
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(42,92,69,0.15);
+      white-space: nowrap;
+    }
+
+    .db-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text3);
+      margin-bottom: 1.25rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 540px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text2);
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"] {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(42,92,69,0.1);
+    }
+
+    input::placeholder { color: var(--text3); }
+
+    .form-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .toggle {
+      position: relative;
+      width: 40px;
+      height: 22px;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border2);
+      border-radius: 999px;
+      transition: 0.2s;
+      cursor: pointer;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    input:checked + .toggle-slider { background: var(--accent); }
+    input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+    .toggle-label { font-size: 0.875rem; color: var(--text2); }
+
+    .btn {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 9px 20px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .btn-primary:hover { background: var(--accent-text); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text2);
+      border-color: var(--border);
+    }
+
+    .btn-ghost:hover { background: var(--surface2); border-color: var(--border2); }
+
+    .btn-danger-ghost {
+      background: transparent;
+      color: var(--danger);
+      border-color: transparent;
+      padding: 6px 10px;
+    }
+
+    .btn-danger-ghost:hover { background: var(--danger-light); }
+
+    .btn-icon {
+      background: transparent;
+      color: var(--text2);
+      border-color: transparent;
+      padding: 6px 10px;
+    }
+
+    .btn-icon:hover { background: var(--surface2); color: var(--text); }
+
+    .status {
+      display: none;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+      font-weight: 500;
+    }
+
+    .status.success { background: var(--accent-light); color: var(--accent-text); display: block; border: 1px solid rgba(42,92,69,0.2); }
+    .status.error { background: var(--danger-light); color: var(--danger); display: block; border: 1px solid rgba(192,57,43,0.2); }
+    .status.info { background: var(--warning-light); color: var(--warning); display: block; border: 1px solid rgba(184,134,11,0.15); }
+
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .list-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text3);
+    }
+
+    .count-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      background: var(--surface2);
+      color: var(--text2);
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+    }
+
+    .persona-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .persona-row:last-child { border-bottom: none; }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+      letter-spacing: 0.02em;
+    }
+
+    .avatar-green { background: #e8f2ed; color: #1e4433; }
+    .avatar-blue { background: #e8eef8; color: #1e3a6e; }
+    .avatar-amber { background: #fdf6e3; color: #7a5c00; }
+    .avatar-rose { background: #fdeef0; color: #7a1c28; }
+
+    .persona-info { flex: 1; min-width: 0; }
+
+    .persona-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .persona-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 3px;
+    }
+
+    .persona-meta span {
+      font-size: 0.78rem;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .persona-meta svg { width: 12px; height: 12px; opacity: 0.6; }
+
+    .status-pill {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 999px;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+
+    .pill-active { background: var(--accent-light); color: var(--accent-text); }
+    .pill-inactive { background: var(--surface2); color: var(--text3); }
+
+    .persona-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text3);
+    }
+
+    .empty-state svg {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 12px;
+      opacity: 0.4;
+    }
+
+    .empty-state p { font-size: 0.9rem; }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+    }
+
+    .spinner-dark {
+      border-color: rgba(0,0,0,0.1);
+      border-top-color: var(--text2);
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .search-wrap {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+
+    .search-wrap svg {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 15px;
+      height: 15px;
+      color: var(--text3);
+      pointer-events: none;
+    }
+
+    #search {
+      width: 100%;
+      padding: 9px 12px 9px 34px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-left">
+      <h1>Gestor de personas</h1>
+      <p>Conectado a Supabase · tabla <code style="font-family:'DM Mono',monospace;font-size:0.8em;background:var(--surface2);padding:2px 6px;border-radius:4px;border:1px solid var(--border);">personas</code></p>
+    </div>
+    <div class="db-badge">
+      <div class="db-dot"></div>
+      upiofsibmnnecqjktxms
+    </div>
+  </header>
+
+  <div id="status" class="status"></div>
+
+  <div class="card">
+    <div class="card-title">Nueva persona</div>
+    <div class="form-grid">
+      <div class="field">
+        <label for="f-nombre">Nombre *</label>
+        <input id="f-nombre" type="text" placeholder="Ej: María" />
+      </div>
+      <div class="field">
+        <label for="f-apellidos">Apellidos *</label>
+        <input id="f-apellidos" type="text" placeholder="Ej: García López" />
+      </div>
+      <div class="field">
+        <label for="f-email">Correo electrónico *</label>
+        <input id="f-email" type="email" placeholder="correo@ejemplo.com" />
+      </div>
+      <div class="field">
+        <label for="f-telefono">Teléfono</label>
+        <input id="f-telefono" type="tel" placeholder="+34 600 000 000" />
+      </div>
+    </div>
+    <div class="form-footer">
+      <label class="toggle-wrap">
+        <div class="toggle">
+          <input type="checkbox" id="f-activo" checked />
+          <span class="toggle-slider"></span>
+        </div>
+        <span class="toggle-label">Persona activa</span>
+      </label>
+      <button class="btn btn-primary" id="add-btn" onclick="addPersona()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Añadir persona
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="list-header">
+      <span class="list-title">Lista <span class="count-badge" id="count">0</span></span>
+      <button class="btn btn-ghost" onclick="loadPersonas()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+        Actualizar
+      </button>
+    </div>
+
+    <div class="search-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search" type="text" placeholder="Buscar por nombre, apellidos o email…" oninput="filterList()" />
+    </div>
+
+    <div id="personas-list">
+      <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <p>Cargando personas…</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const SUPA_URL = 'https://upiofsibmnnecqjktxms.supabase.co';
+  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVwaW9mc2libW5uZWNxamt0eG1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMTc4NzgsImV4cCI6MjA5NDc5Mzg3OH0.1QPpq73dGLJ3M1KROw0iV-5GGjxm7XFtmz6kzN2ECZo';
+
+  const headers = {
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation'
+  };
+
+  let allPersonas = [];
+
+  const avatarClasses = ['avatar-green', 'avatar-blue', 'avatar-amber', 'avatar-rose'];
+
+  function initials(nombre, apellidos) {
+    return ((nombre[0] || '') + (apellidos[0] || '')).toUpperCase();
+  }
+
+  function showStatus(msg, type) {
+    const el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => { el.className = 'status'; }, 4000);
+  }
+
+  async function loadPersonas() {
+    document.getElementById('personas-list').innerHTML = '<div class="empty-state"><p><span class="spinner spinner-dark"></span> Cargando…</p></div>';
+    try {
+      const res = await fetch(SUPA_URL + '/rest/v1/personas?select=*&order=created_at.desc', { headers });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (err.code === '42P01') {
+          document.getElementById('personas-list').innerHTML = '<div class="empty-state"><p>La tabla no existe. Créala primero en Supabase con el SQL proporcionado.</p></div>';
+        } else {
+          document.getElementById('personas-list').innerHTML = '<div class="empty-state"><p>Error: ' + (err.message || res.status) + '</p></div>';
+        }
+        return;
+      }
+      allPersonas = await res.json();
+      document.getElementById('count').textContent = allPersonas.length;
+      renderList(allPersonas);
+    } catch (e) {
+      document.getElementById('personas-list').innerHTML = '<div class="empty-state"><p>Error de conexión. Verifica tu conexión a internet.</p></div>';
+    }
+  }
+
+  function filterList() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const filtered = allPersonas.filter(p =>
+      p.nombre.toLowerCase().includes(q) ||
+      p.apellidos.toLowerCase().includes(q) ||
+      p.email.toLowerCase().includes(q)
+    );
+    document.getElementById('count').textContent = filtered.length;
+    renderList(filtered);
+  }
+
+  function renderList(data) {
+    const el = document.getElementById('personas-list');
+    if (!data.length) {
+      el.innerHTML = '<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><p>No hay personas. ¡Añade la primera!</p></div>';
+      return;
+    }
+    el.innerHTML = data.map((p, i) => `
+      <div class="persona-row" id="row-${p.id}">
+        <div class="avatar ${avatarClasses[i % 4]}">${initials(p.nombre, p.apellidos)}</div>
+        <div class="persona-info">
+          <div class="persona-name">${p.nombre} ${p.apellidos}</div>
+          <div class="persona-meta">
+            <span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              ${p.email}
+            </span>
+            ${p.telefono ? `<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.6a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 3h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 10.91a16 16 0 0 0 5 5l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${p.telefono}</span>` : ''}
+          </div>
+        </div>
+        <span class="status-pill ${p.activo ? 'pill-active' : 'pill-inactive'}">${p.activo ? 'Activo' : 'Inactivo'}</span>
+        <div class="persona-actions">
+          <button class="btn btn-icon" onclick="toggleActivo('${p.id}', ${p.activo})" title="${p.activo ? 'Desactivar' : 'Activar'}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p.activo ? '<rect x="2" y="6" width="20" height="12" rx="6"/><circle cx="16" cy="12" r="4" fill="currentColor"/>' : '<rect x="2" y="6" width="20" height="12" rx="6"/><circle cx="8" cy="12" r="4" fill="currentColor"/>'}</svg>
+          </button>
+          <button class="btn btn-danger-ghost" onclick="deletePersona('${p.id}')" title="Eliminar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function addPersona() {
+    const nombre = document.getElementById('f-nombre').value.trim();
+    const apellidos = document.getElementById('f-apellidos').value.trim();
+    const email = document.getElementById('f-email').value.trim();
+    const telefono = document.getElementById('f-telefono').value.trim();
+    const activo = document.getElementById('f-activo').checked;
+
+    if (!nombre || !apellidos || !email) {
+      showStatus('⚠ Nombre, apellidos y correo son obligatorios.', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('add-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Guardando…';
+
+    try {
+      const res = await fetch(SUPA_URL + '/rest/v1/personas', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ nombre, apellidos, email, telefono: telefono || null, activo })
+      });
+
+      if (res.ok || res.status === 201) {
+        showStatus('✓ Persona añadida correctamente.', 'success');
+        ['f-nombre','f-apellidos','f-email','f-telefono'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('f-activo').checked = true;
+        loadPersonas();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        if (err.code === '23505') {
+          showStatus('⚠ Ya existe una persona con ese correo electrónico.', 'error');
+        } else {
+          showStatus('Error: ' + (err.message || err.details || 'No se pudo guardar.'), 'error');
+        }
+      }
+    } catch (e) {
+      showStatus('Error de conexión al guardar.', 'error');
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Añadir persona';
+  }
+
+  async function toggleActivo(id, current) {
+    try {
+      const res = await fetch(SUPA_URL + '/rest/v1/personas?id=eq.' + id, {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ activo: !current })
+      });
+      if (res.ok) {
+        loadPersonas();
+      } else {
+        showStatus('No se pudo actualizar el estado.', 'error');
+      }
+    } catch (e) {
+      showStatus('Error de conexión.', 'error');
+    }
+  }
+
+  async function deletePersona(id) {
+    if (!confirm('¿Eliminar esta persona? Esta acción no se puede deshacer.')) return;
+    try {
+      const res = await fetch(SUPA_URL + '/rest/v1/personas?id=eq.' + id, {
+        method: 'DELETE',
+        headers
+      });
+      if (res.ok) {
+        showStatus('Persona eliminada correctamente.', 'success');
+        loadPersonas();
+      } else {
+        showStatus('No se pudo eliminar.', 'error');
+      }
+    } catch (e) {
+      showStatus('Error de conexión.', 'error');
+    }
+  }
+
+  loadPersonas();
+</script>
+</body>
+</html>
